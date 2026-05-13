@@ -1,0 +1,18 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="412dp"
+    android:height="892dp"
+    android:viewportWidth="412"
+    android:viewportHeight="892">
+    <!-- Main Background -->
+    <path
+        android:fillColor="#133E24"
+        android:pathData="M0,0h412v892h-412z" />
+    <!-- Gradient Bottom (Simulating waves) -->
+    <path
+        android:fillColor="#1B4332"
+        android:pathData="M0,892L0,800C100,750 200,850 300,800C350,775 412,800 412,800L412,892Z" />
+    <path
+        android:fillAlpha="0.5"
+        android:fillColor="#2D6A4F"
+        android:pathData="M0,892L0,830C120,780 250,880 350,830C380,815 412,830 412,830L412,892Z" />
+</vector>
