@@ -17,11 +17,17 @@ import com.example.easytrack.utils.ToastHelper;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * SignInActivity is where users enter their credentials to access their tasks.
+ * It checks the provided username and password against our local database.
+ */
 public class SignInActivity extends AppCompatActivity {
 
     private static final String TAG = "SignInActivity";
     private DatabaseHelper dbHelper;
     private SessionManager sessionManager;
+    
+    // We run database lookups in a separate thread to keep the login screen responsive
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     @Override
@@ -34,39 +40,48 @@ public class SignInActivity extends AppCompatActivity {
         dbHelper = new DatabaseHelper(this);
         sessionManager = new SessionManager(this);
 
+        // UI setup to handle the status bar and navigation bar layout
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
 
+        // Linking UI elements from XML to Java
         EditText etUsername = findViewById(R.id.et_username);
         EditText etPassword = findViewById(R.id.et_password);
         Button btnSignIn = findViewById(R.id.btn_sign_in);
         Button btnSignUpLink = findViewById(R.id.btn_sign_up_link);
 
+        // When the user clicks "Sign In"
         btnSignIn.setOnClickListener(v -> {
             String username = etUsername.getText().toString().trim();
             String password = etPassword.getText().toString().trim();
 
+            // Validate that they actually typed something
             if (username.isEmpty() || password.isEmpty()) {
                 ToastHelper.showCustomToast(this, "Please enter all fields");
             } else {
+                // Background check: Is this user in our database?
                 executorService.execute(() -> {
                     boolean isValid = dbHelper.checkUser(username, password);
                     runOnUiThread(() -> {
                         if (isValid) {
+                            // User found! Now get their unique ID and start the session
                             executorService.execute(() -> {
                                 int userId = dbHelper.getUserId(username);
                                 runOnUiThread(() -> {
                                     sessionManager.createLoginSession(userId, username);
                                     ToastHelper.showCustomToast(this, "Login Successful!");
+                                    
+                                    // Take them to the main tasks list
                                     Intent intent = new Intent(SignInActivity.this, TasksActivity.class);
                                     startActivity(intent);
-                                    finish();
+                                    finish(); // Close the sign-in page
                                 });
                             });
                         } else {
+                            // Oops, wrong details
                             ToastHelper.showCustomToast(this, "Invalid Username or Password");
                         }
                     });
@@ -74,6 +89,7 @@ public class SignInActivity extends AppCompatActivity {
             }
         });
 
+        // Clicking "Sign Up" just takes them to the registration screen
         btnSignUpLink.setOnClickListener(v -> {
             Intent intent = new Intent(SignInActivity.this, SignUpActivity.class);
             startActivity(intent);
@@ -83,6 +99,7 @@ public class SignInActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        // Stop the background thread when we're done
         executorService.shutdown();
     }
 }

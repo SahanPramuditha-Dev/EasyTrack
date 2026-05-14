@@ -9,17 +9,30 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * TaskViewModel is the "brain" for the TasksActivity.
+ * It sits between the Activity (the UI) and the DatabaseHelper (the data).
+ * By using a ViewModel, we ensure that our task list survives screen rotations 
+ * and other configuration changes.
+ */
 public class TaskViewModel extends ViewModel {
     private final DatabaseHelper dbHelper;
     private final int userId;
+    
+    // LiveData allows the UI to "observe" the data. 
+    // When the task list changes, the UI updates automatically.
     private final MutableLiveData<List<Task>> tasks = new MutableLiveData<>();
+    
+    // A separate channel to send short messages (like "Task added") to the UI
     private final MutableLiveData<String> toastMessage = new MutableLiveData<>();
+    
+    // Using a background thread so the app doesn't freeze during database operations
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     public TaskViewModel(DatabaseHelper dbHelper, int userId) {
         this.dbHelper = dbHelper;
         this.userId = userId;
-        loadTasks();
+        loadTasks(); // Fetch the initial list of tasks
     }
 
     public LiveData<List<Task>> getTasks() {
@@ -30,10 +43,13 @@ public class TaskViewModel extends ViewModel {
         return toastMessage;
     }
 
+    /**
+     * Re-fetches the tasks from the database in the background.
+     */
     public void loadTasks() {
         executorService.execute(() -> {
             List<Task> taskList = dbHelper.getAllTasks(userId);
-            tasks.postValue(taskList);
+            tasks.postValue(taskList); // PostValue is used to update LiveData from a background thread
         });
     }
 
@@ -41,7 +57,7 @@ public class TaskViewModel extends ViewModel {
         executorService.execute(() -> {
             if (dbHelper.addTask(name, userId)) {
                 toastMessage.postValue("Task added");
-                loadTasks();
+                loadTasks(); // Refresh the list
             }
         });
     }
@@ -74,6 +90,7 @@ public class TaskViewModel extends ViewModel {
     @Override
     protected void onCleared() {
         super.onCleared();
+        // Always shut down the background service when the ViewModel is destroyed
         executorService.shutdown();
     }
 }

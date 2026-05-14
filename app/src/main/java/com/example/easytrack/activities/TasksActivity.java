@@ -36,6 +36,11 @@ import com.google.android.material.progressindicator.LinearProgressIndicator;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * TasksActivity is the heart of the app. It's where users spend most of their time
+ * managing their to-do list. It displays the tasks, shows progress, and 
+ * provides options to add, edit, or delete tasks.
+ */
 public class TasksActivity extends AppCompatActivity implements OnTaskClickListener {
 
     private static final String TAG = "TasksActivity";
@@ -59,6 +64,7 @@ public class TasksActivity extends AppCompatActivity implements OnTaskClickListe
         sessionManager = new SessionManager(this);
         currentUserId = sessionManager.getUserId();
         
+        // If we lost the session for some reason, go back to sign-in
         if (currentUserId == -1) {
             startActivity(new Intent(this, SignInActivity.class));
             finish();
@@ -71,20 +77,25 @@ public class TasksActivity extends AppCompatActivity implements OnTaskClickListe
             return insets;
         });
 
+        // Initialize UI components
         tvProgressStatus = findViewById(R.id.tv_progress_status);
         progressBar = findViewById(R.id.progressBar);
         layoutEmptyState = findViewById(R.id.layout_empty_state);
         rvTasks = findViewById(R.id.rv_tasks);
 
+        // Setup the list (RecyclerView)
         taskList = new ArrayList<>();
         adapter = new TaskAdapter(taskList, this);
         rvTasks.setLayoutManager(new LinearLayoutManager(this));
         rvTasks.setAdapter(adapter);
 
+        // Setup the ViewModel which handles all the data logic
         setupViewModel();
 
+        // FAB (Floating Action Button) to add a new task
         findViewById(R.id.fab).setOnClickListener(v -> showTaskDialog(null));
 
+        // Bottom Navigation handlers
         findViewById(R.id.nav_profile).setOnClickListener(v -> {
             startActivity(new Intent(this, ProfileActivity.class));
             finish();
@@ -95,20 +106,27 @@ public class TasksActivity extends AppCompatActivity implements OnTaskClickListe
             finish();
         });
 
+        // Highlight 'Tasks' as the active tab
         findViewById(R.id.pill_tasks).setVisibility(View.VISIBLE);
         ((TextView)findViewById(R.id.tv_tasks)).setTextColor(getResources().getColor(R.color.button_green));
         ((android.widget.ImageView)findViewById(R.id.iv_tasks)).setColorFilter(getResources().getColor(R.color.button_green));
     }
 
+    /**
+     * Connects the UI to the ViewModel.
+     * The ViewModel keeps the data alive even if the screen rotates.
+     */
     private void setupViewModel() {
         DatabaseHelper dbHelper = new DatabaseHelper(this);
         TaskViewModelFactory factory = new TaskViewModelFactory(dbHelper, currentUserId);
         viewModel = new ViewModelProvider(this, factory).get(TaskViewModel.class);
 
+        // Observe the task list. Every time the database changes, this code runs automatically!
         viewModel.getTasks().observe(this, tasks -> {
             this.taskList = tasks;
             adapter.updateTasks(tasks);
             
+            // Show a friendly "No tasks" message if the list is empty
             if (tasks.isEmpty()) {
                 layoutEmptyState.setVisibility(View.VISIBLE);
                 rvTasks.setVisibility(View.GONE);
@@ -120,6 +138,7 @@ public class TasksActivity extends AppCompatActivity implements OnTaskClickListe
             updateProgress();
         });
 
+        // Listen for any toast messages (errors or successes) from the ViewModel
         viewModel.getToastMessage().observe(this, message -> {
             if (message != null) {
                 ToastHelper.showCustomToast(this, message);
@@ -127,6 +146,9 @@ public class TasksActivity extends AppCompatActivity implements OnTaskClickListe
         });
     }
 
+    /**
+     * Calculates and updates the "X of Y done" text and the progress bar.
+     */
     private void updateProgress() {
         int total = taskList.size();
         int done = 0;
@@ -141,6 +163,8 @@ public class TasksActivity extends AppCompatActivity implements OnTaskClickListe
             progressBar.setProgress(0);
         }
     }
+
+    // --- Interface implementation for clicks in the list ---
 
     @Override
     public void onTaskCheckClick(Task task) {
@@ -157,6 +181,9 @@ public class TasksActivity extends AppCompatActivity implements OnTaskClickListe
         showTaskDialog(task);
     }
 
+    /**
+     * Shows a popup dialog to either add a brand new task or rename an existing one.
+     */
     private void showTaskDialog(Task existingTask) {
         Dialog dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -168,6 +195,7 @@ public class TasksActivity extends AppCompatActivity implements OnTaskClickListe
         Button btnCancel = dialog.findViewById(R.id.btn_cancel);
         Button btnAdd = dialog.findViewById(R.id.btn_add);
 
+        // If we're editing, pre-fill the current name
         if (existingTask != null) {
             btnAdd.setText("Update");
             etTaskName.setText(existingTask.getName());

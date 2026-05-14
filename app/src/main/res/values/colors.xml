@@ -21,11 +21,12 @@
     <color name="edit_icon">#2D6A4F</color>
     <color name="delete_icon">#C62828</color>
     <color name="fab_bg">#C1E1C5</color>
+    <color name="add_button_bg">#D1E8D7</color>
     <color name="nav_active_bg">#C1E1C5</color>
     <color name="divider_color">#EEEEEE</color>
 
     <!-- Profile page colors -->
-    <color name="profile_header_bg">#C1E1C5</color>
+    <color name="profile_header_bg">#C8E0CE</color>
     <color name="sign_out_red">#B71C1C</color>
     <color name="dialog_bg">#F1F4F1</color>
 </resources>

@@ -13,40 +13,49 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.example.easytrack.R;
 
+/**
+ * AboutActivity displays information about the app and the developers.
+ * It's a simple informational page that also handles app-wide exit and navigation.
+ */
 public class AboutActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // Enable edge-to-edge display for a modern look
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_about);
+        
+        // Handle window insets to ensure content isn't hidden behind system bars (status/nav bars)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
 
-        // Setup Toolbar Navigation (Back Button)
+        // Setup Toolbar Navigation (The back arrow)
         Toolbar toolbar = findViewById(R.id.toolbar);
         if (toolbar != null) {
-            toolbar.setNavigationOnClickListener(v -> finish());
+            toolbar.setNavigationOnClickListener(v -> finish()); // Just goes back to the previous screen
         }
 
-        // Exit Button
+        // The "Exit Application" button logic
         View btnExit = findViewById(R.id.btn_exit);
         if (btnExit != null) {
             btnExit.setOnClickListener(v -> {
-                finishAffinity();
-                System.exit(0);
+                finishAffinity(); // Closes all activities in the stack
+                System.exit(0);   // Forcefully terminates the app process
             });
         }
 
-        // Setup Bottom Navigation
+        // --- Bottom Navigation Handlers ---
+
         View navTasks = findViewById(R.id.nav_tasks);
         if (navTasks != null) {
             navTasks.setOnClickListener(v -> {
                 startActivity(new Intent(this, TasksActivity.class));
-                finish();
+                finish(); // Close this so we don't build up a huge stack of activities
             });
         }
 
@@ -58,7 +67,7 @@ public class AboutActivity extends AppCompatActivity {
             });
         }
 
-        // Active state for About tab
+        // Highlight this tab as the "active" one in the bottom navigation
         View pillAbout = findViewById(R.id.pill_about);
         if (pillAbout != null) {
             pillAbout.setVisibility(View.VISIBLE);

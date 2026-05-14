@@ -11,12 +11,17 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * DatabaseHelper is the backbone of our app's data storage.
+ * It manages the SQLite database where we store users and their tasks.
+ * Think of this as the "filing cabinet" for the app.
+ */
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "EasyTrack.db";
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 2; // Incremented when we change the schema (like adding image support)
 
-    // Users Table
+    // Table and Column names for Users
     public static final String TABLE_USERS = "users";
     public static final String COL_USER_ID = "id";
     public static final String COL_USERNAME = "username";
@@ -24,7 +29,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COL_PASSWORD = "password";
     public static final String COL_USER_IMAGE = "image";
 
-    // Tasks Table
+    // Table and Column names for Tasks
     public static final String TABLE_TASKS = "tasks";
     public static final String COL_TASK_ID = "id";
     public static final String COL_TASK_NAME = "name";
@@ -35,8 +40,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         super(context.getApplicationContext(), DATABASE_NAME, null, DATABASE_VERSION);
     }
 
+    /**
+     * Called when the database is created for the first time.
+     * This is where we define the structure of our tables.
+     */
     @Override
     public void onCreate(SQLiteDatabase db) {
+        // SQL command to create the Users table
         String createUsersTable = "CREATE TABLE " + TABLE_USERS + " (" +
                 COL_USER_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 COL_USERNAME + " TEXT UNIQUE, " +
@@ -44,6 +54,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 COL_PASSWORD + " TEXT, " +
                 COL_USER_IMAGE + " BLOB)";
 
+        // SQL command to create the Tasks table, linked to Users by user_id
         String createTasksTable = "CREATE TABLE " + TABLE_TASKS + " (" +
                 COL_TASK_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 COL_TASK_NAME + " TEXT, " +
@@ -55,14 +66,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(createTasksTable);
     }
 
+    /**
+     * Called when we update the app and need to change the database structure.
+     */
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         if (oldVersion < 2) {
+            // Version 2 added support for profile images
             db.execSQL("ALTER TABLE " + TABLE_USERS + " ADD COLUMN " + COL_USER_IMAGE + " BLOB");
         }
     }
 
-    // Password Hashing
+    /**
+     * Security first! This hashes passwords so we don't store them in plain text.
+     */
     private String hashPassword(String password) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -75,11 +92,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             }
             return hexString.toString();
         } catch (NoSuchAlgorithmException e) {
-            return password; // Fallback to plain (not recommended)
+            return password; // Fallback if hashing fails (rare)
         }
     }
 
-    // User Operations
+    // --- User Operations ---
+
     public boolean registerUser(String username, String email, String password) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -124,6 +142,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return "";
     }
 
+    /**
+     * Updates the basic info for a user.
+     */
+    public boolean updateUserInfo(int userId, String username, String email) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COL_USERNAME, username);
+        values.put(COL_EMAIL, email);
+        return db.update(TABLE_USERS, values, COL_USER_ID + "=?", new String[]{String.valueOf(userId)}) > 0;
+    }
+
+    /**
+     * Saves the profile picture as a byte array (BLOB).
+     */
     public boolean updateUserImage(int userId, byte[] imageBytes) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -143,16 +175,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return null;
     }
 
-    // Task Operations
+    // --- Task Operations ---
+
     public boolean addTask(String taskName, int userId) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(COL_TASK_NAME, taskName);
-        values.put(COL_IS_DONE, 0);
+        values.put(COL_IS_DONE, 0); // New tasks are not done by default
         values.put(COL_OWNER_ID, userId);
         return db.insert(TABLE_TASKS, null, values) != -1;
     }
 
+    /**
+     * Fetches all tasks belonging to a specific user.
+     */
     public List<Task> getAllTasks(int userId) {
         List<Task> tasks = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();

@@ -190,11 +190,12 @@
         android:layout_marginEnd="24dp"
         android:layout_marginBottom="24dp"
         android:contentDescription="Add task"
-        app:backgroundTint="@color/fab_bg"
+        app:backgroundTint="@color/add_button_bg"
         app:elevation="4dp"
         app:fabCustomSize="64dp"
         app:layout_constraintBottom_toTopOf="@id/layout_nav"
         app:layout_constraintEnd_toEndOf="parent"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.EasyTrack.RoundedButton"
         app:srcCompat="@drawable/ic_add"
         app:tint="@color/text_primary" />
 
